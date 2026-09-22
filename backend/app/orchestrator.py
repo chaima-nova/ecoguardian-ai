@@ -8,6 +8,7 @@ from .providers.source_retrieval import estimate_region_coverage_score, retrieve
 from .heat_risk import analyze_heat_risk
 from .perception.object_classifier import classify_object
 from .perception.surface_inference import infer_surface
+from .scientific.assembly import ObservationProviderPayloads, assemble_observations
 from .scoring.anomaly import ANOMALY_THRESHOLD, compute_anomaly_score, passes_anomaly_gate
 from .scoring.confidence import compute_confidence_score
 from .scoring.ranker import compute_final_rank_score, rank_hotspots
@@ -33,6 +34,9 @@ from .schemas import (
     TraceStep,
     TraceStepStatus,
     AnalysisRegion,
+    HeatAnalysisResult,
+    HeatRiskInfo,
+    ScientificObservations,
 )
 
 
@@ -151,6 +155,7 @@ def _candidate_to_seed(
     thermal_min: float,
     thermal_max: float,
     thermal_mean: float,
+    observations: ScientificObservations,
     image_path: str | None = None,
 ) -> dict:
     intensity: float = candidate.get("intensity", 0.5)
@@ -207,6 +212,7 @@ def _candidate_to_seed(
         "confidence_score": confidence_score,
         "trace": trace_steps,
         "why": _why_for_candidate(htype, intensity, surface_temp),
+        "observations": observations,
     }
     llm_reasoning = classification.get("llm_reasoning")
     if llm_reasoning:
@@ -229,6 +235,12 @@ def _build_hotspot_from_seed_with_centroid(
     for event in events:
         event.region_id = region_id
     scoring = build_scoring_result(seed)
+    risk = analyze_heat_risk(
+        hotspot_type=seed["hotspot_type"],
+        surface_temperature_c=seed["surface_temperature_c"],
+        coverage_score=seed["coverage_score"],
+            observations=seed.get("observations"),
+    )
     status = HotspotStatus.investigating
 
     if not passes_anomaly_gate(scoring.anomaly_score):
@@ -265,6 +277,12 @@ def _build_hotspot_from_seed_with_centroid(
         updated_at=now,
         why=scoring.why,
         trace=trace,
+        heat_risk=HeatRiskInfo(
+            score=risk["heat_risk_score"],
+            factors=risk["factors"],
+            confidence=risk.get("confidence"),
+            observation_status=risk["observation_status"],
+        ),
     )
     return hotspot, events
 
@@ -276,6 +294,7 @@ def build_analysis_from_candidates(
     radius_m: int,
     region_id: str,
     image_path: str | None = None,
+    observation_payloads: ObservationProviderPayloads | None = None,
 ) -> tuple[AnalysisResponse, list[AnalysisEvent]]:
     """Build an AnalysisResponse using real hotspot candidates from the thermal model."""
     now = datetime.now(UTC)
@@ -288,13 +307,25 @@ def build_analysis_from_candidates(
     t_min = float(thermal_data.get("min_temp_c", 28.0))
     t_max = float(thermal_data.get("max_temp_c", 48.0))
     t_mean = float(thermal_data.get("mean_temp_c", 35.0))
+    observations = assemble_observations(
+        observation_payloads
+        or ObservationProviderPayloads(thermal_data=thermal_data)
+    )
 
     hotspots: list[HotspotCandidate] = []
     all_events: list[AnalysisEvent] = []
 
     for i, candidate in enumerate(candidates):
         hotspot_id = f"hs_cap_{i + 1:02d}"
-        seed = _candidate_to_seed(candidate, hotspot_id, t_min, t_max, t_mean, image_path=image_path)
+        seed = _candidate_to_seed(
+            candidate,
+            hotspot_id,
+            t_min,
+            t_max,
+            t_mean,
+            observations,
+            image_path=image_path,
+        )
         hotspot, events = _build_hotspot_from_seed_with_centroid(seed, region_id, now)
         hotspots.append(hotspot)
         all_events.extend(events)
@@ -325,6 +356,7 @@ def build_analysis_from_candidates(
             maps_fallback_count=int(enrichment_summary["maps_fallback_count"]),
             enrichment_confidence_avg=float(enrichment_summary["enrichment_confidence_avg"]),
             source_records=source_records,
+            scientific_observations=observations,
             status=AnalysisStatus.running,
             summary=summary,
         ),
@@ -335,6 +367,15 @@ def build_analysis_from_candidates(
             top_hotspots=top_ranked,
             top_hotspot_id=top_ranked[0].hotspot_id if top_ranked else None,
             discarded_hotspot_ids=[h.hotspot_id for h in hotspots if h.status == HotspotStatus.discarded],
+            heat_analysis=HeatAnalysisResult(
+                heat_risk=HeatRiskInfo(
+                    score=max((hotspot.heat_risk.score for hotspot in hotspots if hotspot.heat_risk), default=0.0),
+                    factors=["deterministic hotspot heat-risk analysis"],
+                    confidence=region_coverage_score,
+                    observation_status=observations.lst.status if observations.lst else "unavailable",
+                ),
+                observations=observations,
+            ),
         ),
     )
     return response, all_events

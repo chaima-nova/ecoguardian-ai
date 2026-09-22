@@ -4,7 +4,7 @@
  * Typed against backend/app/schemas.py - all field names match the Python schema.
  * Use `mapHotspot()` to convert a BackendHotspot into the frontend Hotspot type.
  */
-import type { ChainOfThoughtStep, Hotspot, HotspotType, Recommendation, TraceAction, TraceStep } from './types';
+import type { ChainOfThoughtStep, HeatRiskInfo, Hotspot, HotspotType, Recommendation, ScientificObservations, TraceAction, TraceStep } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -87,6 +87,12 @@ export interface BackendHotspot {
   updated_at?: string | null;
   why: string[];
   trace: BackendTraceStep[];
+  heat_risk?: {
+    score: number;
+    factors: string[];
+    confidence?: number | null;
+    observation_status: 'measured' | 'model_derived' | 'proxy' | 'unavailable';
+  } | null;
 }
 
 export interface BackendRankedHotspot {
@@ -133,6 +139,24 @@ export interface BackendAnalysisRegion {
   aligned_rgb_width?: number | null;
   aligned_rgb_height?: number | null;
   summary: BackendAnalysisSummary;
+  scientific_observations?: {
+    lst?: BackendScientificObservation | null;
+    ndvi?: BackendScientificObservation | null;
+    ndwi?: BackendScientificObservation | null;
+    weather?: BackendScientificObservation | null;
+    urban_surface?: BackendScientificObservation | null;
+  } | null;
+}
+
+interface BackendScientificObservation {
+  value: number | Record<string, unknown> | null;
+  unit?: string | null;
+  timestamp?: string | null;
+  source?: string | null;
+  status: 'measured' | 'model_derived' | 'proxy' | 'unavailable';
+  quality?: number | null;
+  spatial_resolution_m?: number | null;
+  coverage_score?: number | null;
 }
 
 export interface BackendAnalysisResult {
@@ -142,6 +166,11 @@ export interface BackendAnalysisResult {
   top_hotspots: BackendRankedHotspot[];
   top_hotspot_id?: string | null;
   discarded_hotspot_ids: string[];
+  heat_analysis?: {
+    heat_risk: BackendHotspot['heat_risk'];
+    observations: BackendAnalysisRegion['scientific_observations'];
+    deterministic: boolean;
+  } | null;
 }
 
 export interface BackendAnalysisResponse {
@@ -523,6 +552,14 @@ export function mapHotspot(b: BackendHotspot): Hotspot {
     recommendedAction: b.recommended_action ?? undefined,
     priorityRank: b.priority_rank ?? undefined,
     isTopRanked: b.is_top_ranked,
+    heatRisk: b.heat_risk
+      ? {
+        score: b.heat_risk.score,
+        factors: b.heat_risk.factors,
+        confidence: b.heat_risk.confidence,
+        observationStatus: b.heat_risk.observation_status,
+      } as HeatRiskInfo
+      : undefined,
   };
 }
 

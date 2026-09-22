@@ -44,6 +44,18 @@ class SurfaceFamily(str, Enum):
     ambiguous = "ambiguous"
 
 
+class ObservationStatus(str, Enum):
+    measured = "measured"
+    model_derived = "model_derived"
+    proxy = "proxy"
+    unavailable = "unavailable"
+
+
+class AgentRole(str, Enum):
+    heat_analyst = "heat_analyst"
+    climate_action = "climate_action"
+
+
 class TraceKind(str, Enum):
     candidate_detected = "candidate_detected"
     generate_thermal_overlay = "generate_thermal_overlay"
@@ -92,6 +104,38 @@ class SourceRecord(BaseModel):
     geolocation_confidence: float = 0.0
 
 
+class ScientificObservation(BaseModel):
+    value: float | dict[str, Any] | None = None
+    unit: str | None = None
+    timestamp: datetime | None = None
+    source: str | None = None
+    status: ObservationStatus = ObservationStatus.unavailable
+    quality: float | None = Field(default=None, ge=0.0, le=1.0)
+    spatial_resolution_m: float | None = Field(default=None, ge=0.0)
+    coverage_score: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class ScientificObservations(BaseModel):
+    lst: ScientificObservation | None = None
+    ndvi: ScientificObservation | None = None
+    ndwi: ScientificObservation | None = None
+    weather: ScientificObservation | None = None
+    urban_surface: ScientificObservation | None = None
+
+
+class HeatRiskInfo(BaseModel):
+    score: float = Field(ge=0.0, le=1.0)
+    factors: list[str] = Field(default_factory=list)
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    observation_status: ObservationStatus = ObservationStatus.model_derived
+
+
+class HeatAnalysisResult(BaseModel):
+    heat_risk: HeatRiskInfo
+    observations: ScientificObservations = Field(default_factory=ScientificObservations)
+    deterministic: bool = True
+
+
 class BoundingBox(BaseModel):
     x: int
     y: int
@@ -136,6 +180,7 @@ class AnalysisRegion(BaseModel):
     aligned_rgb_width: int | None = None
     aligned_rgb_height: int | None = None
     source_records: list[SourceRecord] = Field(default_factory=list)
+    scientific_observations: ScientificObservations | None = None
     status: AnalysisStatus
     summary: AnalysisSummary
 
@@ -215,6 +260,7 @@ class HotspotCandidate(BaseModel):
     updated_at: datetime | None = None
     why: list[str] = Field(default_factory=list)
     trace: list[TraceStep] = Field(default_factory=list)
+    heat_risk: HeatRiskInfo | None = None
 
 
 class PerceptionEvidence(BaseModel):
@@ -261,6 +307,7 @@ class AnalysisResult(BaseModel):
     top_hotspots: list[RankedHotspot]
     top_hotspot_id: str | None = None
     discarded_hotspot_ids: list[str] = Field(default_factory=list)
+    heat_analysis: HeatAnalysisResult | None = None
 
 
 class AnalysisResponse(BaseModel):

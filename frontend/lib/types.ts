@@ -16,6 +16,34 @@ export type HotspotType =
   | 'vegetation_loss' 
   | 'other';
 
+export type ObservationStatus = 'measured' | 'model_derived' | 'proxy' | 'unavailable';
+
+export interface ScientificObservation {
+  value: number | Record<string, unknown> | null;
+  unit?: string | null;
+  timestamp?: string | null;
+  source?: string | null;
+  status: ObservationStatus;
+  quality?: number | null;
+  spatialResolutionM?: number | null;
+  coverageScore?: number | null;
+}
+
+export interface ScientificObservations {
+  lst?: ScientificObservation | null;
+  ndvi?: ScientificObservation | null;
+  ndwi?: ScientificObservation | null;
+  weather?: ScientificObservation | null;
+  urbanSurface?: ScientificObservation | null;
+}
+
+export interface HeatRiskInfo {
+  score: number;
+  factors: string[];
+  confidence?: number | null;
+  observationStatus: ObservationStatus;
+}
+
 export type TraceAction =
   | 'candidate_detected'
   | 'generate_thermal_overlay'
@@ -85,6 +113,7 @@ export interface Hotspot {
   recommendedAction?: string;
   priorityRank?: number;
   isTopRanked?: boolean;
+  heatRisk?: HeatRiskInfo;
 }
 
 export interface RecommendationAction {

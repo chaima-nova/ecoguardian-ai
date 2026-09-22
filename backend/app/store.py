@@ -19,6 +19,11 @@ from .capture_pipeline import (
     radius_m_from_bounds,
 )
 from .orchestrator import STEP_INTERVAL_MS, build_analysis_from_candidates
+from .scientific.acquisition import (
+    DefaultProviderAcquisition,
+    ProviderAcquisition,
+    acquire_observation_payloads,
+)
 from .schemas import (
     AnalysisEvent,
     AnalysisResponse,
@@ -36,18 +41,32 @@ from .demo_data import DEMO_REGION_ID, build_demo_analysis
 
 
 class InMemoryAnalysisStore:
-    def __init__(self) -> None:
+    def __init__(self, provider_acquisition: ProviderAcquisition | None = None) -> None:
         self._lock = Lock()
         self._analyses: dict[str, AnalysisResponse] = {}
         self._events: dict[str, list[AnalysisEvent]] = defaultdict(list)
         self._created_at: dict[str, datetime] = {}
+        self._provider_acquisition = provider_acquisition or DefaultProviderAcquisition()
 
     def create_analysis(self, payload: CreateAnalysisRequest) -> AnalysisResponse:
         if DEMO_MODE:
             return self._create_demo_analysis()
 
         region_id = f"region_{uuid4().hex[:8]}"
-        analysis, events = build_analysis_from_candidates([], {}, payload.center, payload.radius_m, region_id)
+        thermal_data: dict = {}
+        observation_payloads = acquire_observation_payloads(
+            self._provider_acquisition,
+            center=payload.center,
+            thermal_data=thermal_data,
+        )
+        analysis, events = build_analysis_from_candidates(
+            [],
+            thermal_data,
+            payload.center,
+            payload.radius_m,
+            region_id,
+            observation_payloads=observation_payloads,
+        )
 
         with self._lock:
             self._analyses[region_id] = analysis
@@ -127,9 +146,20 @@ class InMemoryAnalysisStore:
         )
         proposed = propose_hotspots_from_capture(metadata.region.center, radius_m, thermal_result)
         thermal_data = thermal_result.get("thermal_data", {})
+        observation_payloads = acquire_observation_payloads(
+            self._provider_acquisition,
+            center=metadata.region.center,
+            thermal_data=thermal_data,
+        )
 
         analysis, events = build_analysis_from_candidates(
-            proposed, thermal_data, metadata.region.center, radius_m, region_id, image_path=image_path
+            proposed,
+            thermal_data,
+            metadata.region.center,
+            radius_m,
+            region_id,
+            image_path=image_path,
+            observation_payloads=observation_payloads,
         )
 
         analysis.region.bounds = metadata.region.bounds
