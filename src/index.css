@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
+  background-color: #C8E5FF;
+  color: #0A192F;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(0, 242, 254, 0.25);
+}
+
+/* thin, unobtrusive scrollbars to fit the console aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(138, 153, 173, 0.25);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 153, 173, 0.4);
+}
+
+.animate-in {
+  animation: fadeIn 0.45s ease-out both;
+}
