@@ -40,6 +40,12 @@ export default function TopBar() {
       <div className="hidden items-center gap-4 lg:flex">
         <StatusBadge status="DATA_NOT_CONNECTED" />
         <StatusBadge status="RESEARCH_PROTOTYPE" />
+        <NavLink
+          to="/connect"
+          className="rounded-full border border-cyan-mint/60 bg-cyan-mint/[0.10] px-4 py-1.5 text-[12px] font-semibold tracking-wide text-cyan-mint shadow-[0_0_0_1px_rgba(0,174,219,0.15),0_0_18px_rgba(0,174,219,0.35)] backdrop-blur-md transition-all hover:bg-cyan-mint/[0.18] hover:shadow-[0_0_0_1px_rgba(0,174,219,0.25),0_0_26px_rgba(0,174,219,0.5)]"
+        >
+          Connect
+        </NavLink>
       </div>
 
       {menuOpen && (
@@ -64,6 +70,13 @@ export default function TopBar() {
           <div className="flex flex-col gap-2">
             <StatusBadge status="DATA_NOT_CONNECTED" />
             <StatusBadge status="RESEARCH_PROTOTYPE" />
+            <NavLink
+              to="/connect"
+              onClick={() => setMenuOpen(false)}
+              className="mt-1 rounded-full border border-cyan-mint/60 bg-cyan-mint/[0.10] px-4 py-1.5 text-center text-[12px] font-semibold tracking-wide text-cyan-mint shadow-[0_0_0_1px_rgba(0,174,219,0.15),0_0_18px_rgba(0,174,219,0.35)]"
+            >
+              Connect
+            </NavLink>
           </div>
         </div>
       )}

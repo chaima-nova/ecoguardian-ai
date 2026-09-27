@@ -7,6 +7,7 @@ import Discoveries from "./pages/Discoveries";
 import EarlyWarnings from "./pages/EarlyWarnings";
 import Evidence from "./pages/Evidence";
 import DataSources from "./pages/DataSources";
+import Connect from "./pages/Connect";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/early-warnings" element={<EarlyWarnings />} />
         <Route path="/evidence" element={<Evidence />} />
         <Route path="/data" element={<DataSources />} />
+        <Route path="/connect" element={<Connect />} />
       </Routes>
     </PageShell>
   );

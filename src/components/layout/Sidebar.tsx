@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: "/early-warnings", label: "Early Warnings", code: "05" },
   { to: "/evidence", label: "Evidence", code: "06" },
   { to: "/data", label: "Data", code: "07" },
+  { to: "/connect", label: "Connect", code: "08" },
 ];
 
 export default function Sidebar() {
