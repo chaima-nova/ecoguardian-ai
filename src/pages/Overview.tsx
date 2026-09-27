@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import GlassPanel from "../components/ui/GlassPanel";
 import SystemFlowDiagram from "../components/visualization/SystemFlowDiagram";
 import { EpistemicLegend } from "../components/ui/EpistemicTag";
+
+// Lazy-loaded: deck.gl/maplibre are heavy and only needed on this page.
+const CityMap3D = lazy(() => import("../components/CityMap3D"));
 
 const CAPABILITIES = [
   {
@@ -74,6 +78,29 @@ export default function Overview() {
             <p className="mt-2 text-[13px] leading-relaxed text-slate">{c.body}</p>
           </GlassPanel>
         ))}
+      </section>
+
+      {/* 01 WATCH — 3D spatial preview */}
+      <section className="mt-8">
+        <GlassPanel>
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold tracking-[0.18em] text-cyan-mint">01 · WATCH</div>
+              <h2 className="mt-1 text-[16px] font-semibold text-navy">City observation space, in three dimensions</h2>
+            </div>
+          </div>
+          <div className="h-[420px] w-full">
+            <Suspense
+              fallback={
+                <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[#0B1826] text-[12px] text-slate">
+                  Loading spatial preview…
+                </div>
+              }
+            >
+              <CityMap3D />
+            </Suspense>
+          </div>
+        </GlassPanel>
       </section>
 
       {/* System pipeline */}
