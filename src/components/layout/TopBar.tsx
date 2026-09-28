@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import StatusBadge from "../ui/StatusBadge";
+import EcoGuardianLogo from "../EcoGuardianLogo";
 
 const NAV_ITEMS = [
   { to: "/", label: "Overview" },
@@ -18,12 +19,7 @@ export default function TopBar() {
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-white/50 bg-white/35 backdrop-blur-xl px-5 lg:px-8">
       <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan/25 bg-cyan/[0.08]">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="5.4" stroke="#0066FF" strokeWidth="1.2" />
-            <circle cx="8" cy="8" r="1.3" fill="#0066FF" />
-          </svg>
-        </div>
+        <EcoGuardianLogo size={34} />
         <div className="leading-tight">
           <div className="text-[13px] font-bold tracking-[0.14em] text-navy">ECOGUARDIAN AI</div>
           <div className="text-[10.5px] text-slate">City Intelligence &amp; Early Warning System</div>

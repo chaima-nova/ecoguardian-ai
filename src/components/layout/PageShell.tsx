@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import Footer from "./Footer";
 
 export default function PageShell({ children }: { children: ReactNode }) {
   return (
@@ -27,6 +28,7 @@ export default function PageShell({ children }: { children: ReactNode }) {
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <TopBar />
           <main className="min-w-0 flex-1 px-5 py-7 lg:px-9 lg:py-9">{children}</main>
+          <Footer />
         </div>
       </div>
     </div>
